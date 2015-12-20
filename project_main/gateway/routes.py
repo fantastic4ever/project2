@@ -17,7 +17,6 @@ sqs = boto3.client('sqs', region_name='us-east-1')
 
 def init():
     get_response_queue_url_from_db()
-    get_response_cache_from_db()
 
 ### get a list of all available rest api ###
 @app.route('/', methods=['GET'])
@@ -47,27 +46,59 @@ def get_response():
     args = request.args
     client_id = args.get("client_id", "")  # client_id is also the id of response queue
     request_id = args.get("request_id", "")  # if request_id is None, then return the first one in queue
+    if not client_id:
+        return Response("client_id is empty", status=400)
+    logging.info(response_cache)
     this_cache = response_cache.setdefault(client_id, {})
-    if request_id in this_cache:
-        return Response(this_cache[request_id], mimetype='application/json', status=200)
-    # else retrieve from sqs and put into cache and db
+    if request_id:  # only request_id is empty
+        # 1. if it's in cache
+        if request_id in this_cache:
+            logging.info("read from cache")
+            return Response(this_cache[request_id], status=200)
+        
+        # 2. else if it's in db
+        mongo_res = mongo.project2.response_cache.find_one(
+            {
+                "client_id": client_id,
+                "request_id": request_id
+            }
+        )
+        if mongo_res and mongo_res.get("result"):
+            response_cache[client_id][request_id] = mongo_res["result"]  # add it to cache
+            logging.info("read from mongo")
+            return Response(mongo_res["result"], status=200)
+    
+    # 3. else retrieve from sqs and put into cache and db
     queueUrl = "https://sqs.us-east-1.amazonaws.com/308367428478/test"
-    for msg in sqs.receive_messages(QueueUrl = queueUrl, MessageAttributeNames=["All"]):  # TODO: should keep polling until request_id match
-        print msg.body
-        for k,v in msg.message_attributes.items():
-            print k,v
-    return "200"
-        # if msg.message_attributes:
-        #     client_id = msg.message_attributes.get('client_id')
-        #     result = msg.message_attributes.get('result')
-        #     response_cache[client_id][request_id] = result
-        #     write_response_to_db(client_id, request_id, result)
+    sqs_response = sqs.receive_message(QueueUrl=queueUrl, MessageAttributeNames=["All"])
+    messages = sqs_response.get("Messages", list())
+    for msg in messages:
+        try:
+            receiptHandle = msg["ReceiptHandle"]
+            message_attributes = msg["MessageAttributes"]
+            request_id = str(message_attributes["request_id"]["StringValue"])
+            result = message_attributes["result"]["StringValue"]
+            if not (receiptHandle and request_id and result):
+                raise Exception('Invalid response')
+        except Exception, e:
+            return Response("The response is not valid", status=500)
+        response_cache[client_id][request_id] = result  # add it to cache
+        write_response_to_db(client_id, request_id, result)  # add it to db
+        sqs.delete_message(QueueUrl=queueUrl, ReceiptHandle=receiptHandle)
+        logging.info("read from sqs")
+        return Response(result, status=200)
+    else:  # messages is empty
+        logging.info("No result")
+        return Response("There no results for the request at this time. Please try again later", status=404)
 
 def write_response_to_db(client_id, request_id, result):
-    pass
-
-def get_response_cache_from_db():
-    pass
+    mongo.project2.response_cache.insert_one(
+        {
+            "client_id": client_id,
+            "request_id": request_id,
+            "result": result
+        }
+    )
 
 
 if __name__ == '__main__':

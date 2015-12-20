@@ -44,11 +44,10 @@ def get_response_queue_url_from_db():
 @app.route('/response', methods=['GET'])
 def get_response():
     args = request.args
-    client_id = args.get("client_id", "")  # client_id is also the id of response queue
-    request_id = args.get("request_id", "")  # if request_id is None, then return the first one in queue
+    client_id = str(args.get("client_id", ""))  # client_id is also the id of response queue
+    request_id = str(args.get("request_id", ""))  # if request_id is None, then return the first one in queue
     if not client_id:
         return Response("client_id is empty", status=400)
-    logging.info(response_cache)
     this_cache = response_cache.setdefault(client_id, {})
     if request_id:  # only request_id is empty
         # 1. if it's in cache
@@ -71,25 +70,34 @@ def get_response():
     # 3. else retrieve from sqs and put into cache and db
     queueUrl = "https://sqs.us-east-1.amazonaws.com/308367428478/test"
     sqs_response = sqs.receive_message(QueueUrl=queueUrl, MessageAttributeNames=["All"])
-    messages = sqs_response.get("Messages", list())
-    for msg in messages:
+    message = sqs_response.get("Messages", list())
+    while message:
         try:
-            receiptHandle = msg["ReceiptHandle"]
-            message_attributes = msg["MessageAttributes"]
-            request_id = str(message_attributes["request_id"]["StringValue"])
+            message = message[0]  # only one message in list
+            receiptHandle = message["ReceiptHandle"]
+            message_attributes = message["MessageAttributes"]
+            this_request_id = str(message_attributes["request_id"]["StringValue"])
             result = message_attributes["result"]["StringValue"]
-            if not (receiptHandle and request_id and result):
+            if not (receiptHandle and this_request_id and result):
                 raise Exception('Invalid response')
+            # logging.info(receiptHandle)
+            # logging.info(this_request_id)
+            # logging.info(result)
         except Exception, e:
             return Response("The response is not valid", status=500)
-        response_cache[client_id][request_id] = result  # add it to cache
-        write_response_to_db(client_id, request_id, result)  # add it to db
-        sqs.delete_message(QueueUrl=queueUrl, ReceiptHandle=receiptHandle)
-        logging.info("read from sqs")
-        return Response(result, status=200)
-    else:  # messages is empty
-        logging.info("No result")
-        return Response("There no results for the request at this time. Please try again later", status=404)
+        response_cache[client_id][this_request_id] = result  # add it to cache
+        write_response_to_db(client_id, this_request_id, result)  # add it to db
+        # sqs.delete_message(QueueUrl=queueUrl, ReceiptHandle=receiptHandle)
+        logging.info("read request_id %s from sqs"%this_request_id)
+        if not request_id or request_id==this_request_id:  # if match or doest not provide request_id, return
+            return Response(result, status=200)
+        else:  # else keep polling
+            sqs_response = sqs.receive_message(QueueUrl=queueUrl, MessageAttributeNames=["All"])
+            message = sqs_response.get("Messages", list())
+            
+    # exit loop means message is empty
+    logging.info("No result")
+    return Response("There no results for the request at this time. Please try again later", status=404)
 
 def write_response_to_db(client_id, request_id, result):
     mongo.project2.response_cache.insert_one(

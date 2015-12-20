@@ -5,7 +5,11 @@ import urllib
 import logging
 import json
 import boto3
+from pymongo import MongoClient
+from project_main import mongo_credentials
 
+mongo_url = 'mongodb://%s:%s@ds033915.mongolab.com:33915/project2' % (mongo_credentials.DB_USERNAME, mongo_credentials.DB_PASSWORD)
+mongo = MongoClient(mongo_url)
 response_queue_url = {}  # map from client_id(which is also the id of response queue) to queueUrl
 response_cache = {}
 # sqs = boto3.resource('sqs', region_name='us-east-1')

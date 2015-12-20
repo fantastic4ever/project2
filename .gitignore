@@ -1,5 +1,5 @@
 .DS_Store
 *.pyc
-*_credentials.py
+*credentials.py
 *.rdb
 *.log

@@ -1,4 +1,4 @@
-from project_main import app, db
+from project_main.gateway import app
 from flask import Flask, render_template, request, flash, session, redirect, url_for, jsonify, Response
 from sqlalchemy.sql import func
 import urllib
@@ -8,7 +8,8 @@ import boto3
 
 response_queue_address = {}  # map from client_id(which is also the id of response queue) to queueUrl
 response_cache = {}
-sqs = boto3.client('sqs')
+sqs = boto3.resource('sqs', region_name='us-east-1')
+# sqs = boto3.client('sqs', region_name='us-east-1')
 
 def init():
     get_response_queue_address_from_db()
@@ -46,13 +47,18 @@ def get_response():
     if request_id in this_cache:
         return Response(this_cache[request_id], mimetype='application/json', status=200)
     # else retrieve from sqs and put into cache and db
-    queueUrl = ""
-    for msg in sqs.receive_message(QueueUrl= queueUrl):  # TODO: should keep polling until request_id match
-        if msg.message_attributes:
-            client_id = msg.message_attributes.get('client_id')
-            result = msg.message_attributes.get('result')
-            response_cache[client_id][request_id] = result
-            write_response_to_db(client_id, request_id, result)
+    queueUrl = "https://sqs.us-east-1.amazonaws.com/308367428478/test"
+    queue = sqs.Queue(queueUrl)
+    for msg in queue.receive_messages(AttributeNames=["All"],MessageAttributeNames=["All"]):  # TODO: should keep polling until request_id match
+        print msg.body
+        for k,v in msg.message_attributes.items():
+            print k,v
+    return "200"
+        # if msg.message_attributes:
+        #     client_id = msg.message_attributes.get('client_id')
+        #     result = msg.message_attributes.get('result')
+        #     response_cache[client_id][request_id] = result
+        #     write_response_to_db(client_id, request_id, result)
 
 def write_response_to_db(client_id, request_id, result):
     pass

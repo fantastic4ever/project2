@@ -6,13 +6,13 @@ import logging
 import json
 import boto3
 
-response_queue_address = {}  # map from client_id(which is also the id of response queue) to queueUrl
+response_queue_url = {}  # map from client_id(which is also the id of response queue) to queueUrl
 response_cache = {}
-sqs = boto3.resource('sqs', region_name='us-east-1')
-# sqs = boto3.client('sqs', region_name='us-east-1')
+# sqs = boto3.resource('sqs', region_name='us-east-1')
+sqs = boto3.client('sqs', region_name='us-east-1')
 
 def init():
-    get_response_queue_address_from_db()
+    get_response_queue_url_from_db()
     get_response_cache_from_db()
 
 ### get a list of all available rest api ###
@@ -33,9 +33,9 @@ def list_api():
 
     return html%"</p><p>".join(sorted(output))
 
-""" get queue info from database and update response_queue_address """
-@app.route('/response_queue_address', methods=['GET'])
-def get_response_queue_address_from_db():
+""" get queue info from database and update response_queue_url """
+@app.route('/response_queue_url', methods=['GET'])
+def get_response_queue_url_from_db():
     pass
 
 @app.route('/response', methods=['GET'])
@@ -48,8 +48,7 @@ def get_response():
         return Response(this_cache[request_id], mimetype='application/json', status=200)
     # else retrieve from sqs and put into cache and db
     queueUrl = "https://sqs.us-east-1.amazonaws.com/308367428478/test"
-    queue = sqs.Queue(queueUrl)
-    for msg in queue.receive_messages(AttributeNames=["All"],MessageAttributeNames=["All"]):  # TODO: should keep polling until request_id match
+    for msg in sqs.receive_messages(QueueUrl = queueUrl, MessageAttributeNames=["All"]):  # TODO: should keep polling until request_id match
         print msg.body
         for k,v in msg.message_attributes.items():
             print k,v

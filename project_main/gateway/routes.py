@@ -39,7 +39,13 @@ def list_api():
 """ get queue info from database and update response_queue_url """
 @app.route('/response_queue_url', methods=['GET'])
 def get_response_queue_url_from_db():
-    pass
+    mongo_res = mongo.project2.response_queues.find()
+    for res in mongo_res:
+        url = res.get("url")
+        client_id = res.get("client_id")
+        if url and client_id:
+            response_queue_url[client_id] = url
+    return Response("update response_queue_url", status=200)
 
 @app.route('/response', methods=['GET'])
 def get_response():
@@ -68,7 +74,10 @@ def get_response():
             return Response(mongo_res["result"], status=200)
     
     # 3. else retrieve from sqs and put into cache and db
-    queueUrl = "https://sqs.us-east-1.amazonaws.com/308367428478/test"
+    # queueUrl = "https://sqs.us-east-1.amazonaws.com/308367428478/test"
+    queueUrl = response_queue_url.get(client_id)
+    if not queueUrl:
+        return Response("This client_id has not been registered yet", status=400)
     sqs_response = sqs.receive_message(QueueUrl=queueUrl, MessageAttributeNames=["All"])
     message = sqs_response.get("Messages", list())
     while message:
@@ -94,7 +103,7 @@ def get_response():
         else:  # else keep polling
             sqs_response = sqs.receive_message(QueueUrl=queueUrl, MessageAttributeNames=["All"])
             message = sqs_response.get("Messages", list())
-            
+
     # exit loop means message is empty
     logging.info("No result")
     return Response("There no results for the request at this time. Please try again later", status=404)

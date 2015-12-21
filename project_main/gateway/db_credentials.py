@@ -1,1 +1,0 @@
-SQLALCHEMY_DATABASE_URI = 'mysql://root:root@localhost/flask_rest_template'

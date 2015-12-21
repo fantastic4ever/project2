@@ -69,8 +69,6 @@ def init():
         print '....'
         print message['MessageAttributes']
     '''
-    get_response_queue_address_from_db()
-    get_response_cache_from_db()
 
 ### put the finance microservice request into corresponding sqs
 @app.route('/public/finance', methods = ['GET'])

@@ -54,8 +54,14 @@ def get_response():
     request_id = str(args.get("request_id", ""))  # if request_id is None, then return the first one in queue
     if not client_id:
         return Response("client_id is empty", status=400)
+
+    # queueUrl = "https://sqs.us-east-1.amazonaws.com/308367428478/test"
+    queueUrl = response_queue_url.get(client_id)
+    if not queueUrl:
+        return Response("This client_id has not been registered yet", status=400)
+
     this_cache = response_cache.setdefault(client_id, {})
-    if request_id:  # only request_id is empty
+    if request_id:  # iff request_id is not empty
         # 1. if it's in cache
         if request_id in this_cache:
             logging.info("read from cache")
@@ -74,10 +80,6 @@ def get_response():
             return Response(mongo_res["result"], status=200)
     
     # 3. else retrieve from sqs and put into cache and db
-    # queueUrl = "https://sqs.us-east-1.amazonaws.com/308367428478/test"
-    queueUrl = response_queue_url.get(client_id)
-    if not queueUrl:
-        return Response("This client_id has not been registered yet", status=400)
     sqs_response = sqs.receive_message(QueueUrl=queueUrl, MessageAttributeNames=["All"])
     message = sqs_response.get("Messages", list())
     while message:
@@ -88,17 +90,18 @@ def get_response():
             this_request_id = str(message_attributes["request_id"]["StringValue"])
             result = message_attributes["result"]["StringValue"]
             if not (receiptHandle and this_request_id and result):
+                logging.error("receiptHandle: ", receiptHandle)
+                logging.error("this_request_id: ", this_request_id)
+                logging.error("result: ", result)
                 raise Exception('Invalid response')
-            # logging.info(receiptHandle)
-            # logging.info(this_request_id)
-            # logging.info(result)
         except Exception, e:
+            logging.error("message: ", str(message))
             return Response("The response is not valid", status=500)
         response_cache[client_id][this_request_id] = result  # add it to cache
         write_response_to_db(client_id, this_request_id, result)  # add it to db
         # sqs.delete_message(QueueUrl=queueUrl, ReceiptHandle=receiptHandle)
         logging.info("read request_id %s from sqs"%this_request_id)
-        if not request_id or request_id==this_request_id:  # if match or doest not provide request_id, return
+        if not request_id or request_id==this_request_id:  # if match or does not provide request_id, return
             return Response(result, status=200)
         else:  # else keep polling
             sqs_response = sqs.receive_message(QueueUrl=queueUrl, MessageAttributeNames=["All"])

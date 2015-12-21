@@ -1,14 +1,9 @@
-<<<<<<< HEAD
-=======
-from project_main.gateway import app
->>>>>>> ad9ca744fdc5cc76862ed67cf80150ee2d952acd
 from flask import Flask, render_template, request, flash, session, redirect, url_for, jsonify, Response
 from sqlalchemy.sql import func
 import urllib
 import logging
 import json
 import boto3
-<<<<<<< HEAD
 import sys
 import os.path
 from pymongo import MongoClient
@@ -17,24 +12,15 @@ import time
 
 sys.path.append(os.path.abspath(__file__ + '../../..'))
 import mongo_credentials
-=======
-from pymongo import MongoClient
-from project_main import mongo_credentials
->>>>>>> ad9ca744fdc5cc76862ed67cf80150ee2d952acd
-
 mongo_url = 'mongodb://%s:%s@ds033915.mongolab.com:33915/project2' % (mongo_credentials.DB_USERNAME, mongo_credentials.DB_PASSWORD)
 mongo = MongoClient(mongo_url)
 response_queue_url = {}  # map from client_id(which is also the id of response queue) to queueUrl
 response_cache = {}
-<<<<<<< HEAD
 sqs = boto3.client('sqs')
 app = Flask(__name__)
 queue_finance_name = 'finance'
 queue_k12_name = 'k12'
-
-mongo_url = 'mongodb://%s:%s@ds033915.mongolab.com:33915/project2' % (mongo_credentials.DB_USERNAME, mongo_credentials.DB_PASSWORD)
-client = MongoClient(mongo_url)
-db = client.get_default_database()
+db = mongo.get_default_database()
 response_queues = db.response_queues
 
 
@@ -85,13 +71,6 @@ def init():
     '''
     get_response_queue_address_from_db()
     get_response_cache_from_db()
-=======
-# sqs = boto3.resource('sqs', region_name='us-east-1')
-sqs = boto3.client('sqs', region_name='us-east-1')
-
-def init():
-    get_response_queue_url_from_db()
->>>>>>> ad9ca744fdc5cc76862ed67cf80150ee2d952acd
 
 ### put the finance microservice request into corresponding sqs
 @app.route('/public/finance', methods = ['GET'])

@@ -22,7 +22,9 @@ def pull_message():
             for message in response['Messages']:
                 print(message['MessageAttributes'])
                 message_attr = message['MessageAttributes']
-                header = {'Content-type': 'application/json', 'Response-url':message_attr['response_queue_url']['StringValue']}
+                header = {'Content-type': 'application/json', 
+                'Response-url':message_attr['response_queue_url']['StringValue'],
+                'Request-id':message_attr['request_id']['StringValue']}
                 conn.request(method=message_attr['op']['StringValue'], 
                     url=message_attr['service_url']['StringValue'],
                     body=message_attr['body']['StringValue'],

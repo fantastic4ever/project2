@@ -31,7 +31,7 @@ def get_all_student():
         return "empty result"
     for i in response['Items']:
         print(i['schoolid'], ":", i['studentid'])
-    return send_to_response_queue(request.headers.get('Response-url'), response)
+    return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response)
 
 
 @app.route('/private/k12/studentid/<studentid>', methods=['GET'])
@@ -41,7 +41,7 @@ def get_student_all_school(studentid):
         return "empty result"
     for i in response['Items']:
         print(i['schoolid'], ":", i['studentid'])
-    return send_to_response_queue(request.headers.get('Response-url'), response)
+    return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response)
 
 @app.route('/private/k12/studentid/<studentid>/schoolid/<schoolid>', methods=['GET'])
 def get_student_and_school(studentid, schoolid):
@@ -50,7 +50,7 @@ def get_student_and_school(studentid, schoolid):
         return "empty result"
     for i in response['Items']:
         print(i['schoolid'], ":", i['studentid'])
-    return send_to_response_queue(request.headers.get('Response-url'), response)
+    return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response)
 
 
 @app.route('/private/k12', methods=['POST'])
@@ -65,8 +65,8 @@ def add_student_and_school():
     response = table.put_item(Item=student)
     print(json.dumps(response, indent=4, cls=DecimalEncoder))
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:
-        return send_to_response_queue(request.headers.get('Response-url'), response)
-    return send_to_response_queue(request.headers.get('Response-url'), response['ResponseMetadata'])
+        return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response)
+    return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response['ResponseMetadata'])
 
 @app.route('/private/k12/studentid/<studentid>/schoolid/<schoolid>', methods=['PUT'])
 def update_student_and_school(studentid, schoolid):
@@ -91,9 +91,9 @@ def update_student_and_school(studentid, schoolid):
         )
     except Error as e:
         print(e)
-        return send_to_response_queue(request.headers.get('Response-url'), e)
+        return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), e)
     print(json.dumps(response, indent=4, cls=DecimalEncoder))
-    return send_to_response_queue(request.headers.get('Response-url'), response)
+    return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response)
 
 
 @app.route('/private/k12/studentid/<studentid>/schoolid/<schoolid>', methods=['DELETE'])
@@ -107,14 +107,18 @@ def delete_student_and_school(studentid, schoolid):
         )
     except Error as e:
         print(e)
-        return send_to_response_queue(request.headers.get('Response-url'), e)
-    return send_to_response_queue(request.headers.get('Response-url'), response)
+        return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), e)
+    return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response)
 
-def send_to_response_queue(resp_queue_url, json_object):
+def send_to_response_queue(resp_queue_url, req_id, json_object):
     print(resp_queue_url)
     response = sqs_client.send_message(QueueUrl = resp_queue_url, MessageBody = 'boto3', MessageAttributes = {
                 'ReturnValue': {
                     'StringValue': json.dumps(json_object),
+                    'DataType': 'String'
+                },
+                'RequestID':{
+                    'StringValue':req_id,
                     'DataType': 'String'
                 }
             })
@@ -126,9 +130,6 @@ if __name__ == "__main__":
     sqs_client = boto3.client('sqs')
     app.run(host='localhost', port=9000)
     #pull_message()
-
-
-
 
 
 

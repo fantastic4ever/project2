@@ -24,7 +24,6 @@ queue_k12_name = 'k12'
 db = mongo.get_default_database()
 response_queues = db.response_queues
 
-
 def create_request_queues():
     queue_finance = sqs.create_queue(QueueName = queue_finance_name)
     queue_k12 = sqs.create_queue(QueueName = queue_k12_name)
@@ -35,6 +34,10 @@ def delete_request_queues():
 
 def create_response_queue(client_id):
     queue = sqs.create_queue(QueueName = client_id)
+    try:
+        sqs.add_permission(QueueUrl = queue['QueueUrl'], Label = 'AllOp', AWSAccountIds = ['559115960312'], Actions = ['*'])
+    except Error as e:
+        print e
     response_queues.insert_one({'client_id': client_id, 'url': queue['QueueUrl']})
     return queue['QueueUrl']
 
@@ -181,13 +184,6 @@ def delete_k12_info():
     client_id = request.headers.get('client_id')
     url = get_response_queue_url(client_id)
     response = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/k12')
-    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
-
-@app.route('/public/k12/studentid/<studentid>', methods=['DELETE'])
-def delete_k12_info_by_studentid(studentid):
-    client_id = request.headers.get('client_id')
-    url = get_response_queue_url(client_id)
-    response = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/k12/studentid/' + studentid)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
 
 @app.route('/public/k12/studentid/<studentid>/schoolid/<schoolid>', methods=['DELETE'])

@@ -50,13 +50,15 @@ def create_request_id():
     return hash.hexdigest()
 
 def get_response_queue_url(client_id):
-    queue_info = response_queues.find_one({'client_id': client_id})
+    if client_id in response_queue_url:  # if in cache
+        return response_queue_url[client_id]
+
+    queue_info = response_queues.find_one({'client_id': client_id})  # if in mongo
     url = ''
     if queue_info:
         url =  queue_info['url']
-    else:
+    else:  # client id not registered yet
         url = create_response_queue(client_id)
-        # cache_response_queue_url()
         response_queue_url[client_id] = url  # add the new mapping to cache
     return url
 
@@ -86,15 +88,6 @@ def send_to_request_queue(qName, op, response_queue_url, body, service_url):
             }
         })
     return response
-
-def init():
-    print 'init'
-    #create_request_queues()
-    cache_response_queue_url()
-    queue_finance = sqs.get_queue_url(QueueName = queue_finance_name)
-    queue_k12 = sqs.get_queue_url(QueueName = queue_k12_name)
-    print queue_finance['QueueUrl']
-    print queue_k12['QueueUrl']
 
 ### put the finance microservice request into corresponding sqs
 @app.route('/public/finance', methods = ['GET'])
@@ -216,18 +209,6 @@ def list_api():
 
     return html%"</p><p>".join(sorted(output))
 
-""" get queue info from database and update response_queue_url """
-@app.route('/response_queue_url', methods=['GET'])
-def cache_response_queue_url():
-    logging.info("cache_response_queue_url")
-    mongo_res = mongo.project2.response_queues.find()
-    for res in mongo_res:
-        url = res.get("url")
-        client_id = res.get("client_id")
-        if url and client_id:
-            response_queue_url[client_id] = url
-    return Response("update response_queue_url", status=200)
-
 @app.route('/response', methods=['GET'])
 def get_response():
     args = request.args
@@ -237,7 +218,8 @@ def get_response():
         return Response("client_id is empty", status=400)
 
     # queueUrl = "https://sqs.us-east-1.amazonaws.com/308367428478/test"
-    queueUrl = response_queue_url.get(client_id)
+    # queueUrl = response_queue_url.get(client_id)
+    queueUrl = get_response_queue_url(client_id)
     if not queueUrl:
         return Response("This client_id has not been registered yet", status=400)
 
@@ -277,7 +259,6 @@ def get_response():
                 logging.error("ReturnValue: ", ReturnValue)
                 raise Exception('Invalid response')
         except Exception, e:
-            logging.error(e)
             logging.error(message)
             return Response("The response is not valid", status=500)
         response_cache[client_id][this_request_id] = ReturnValue  # add it to cache
@@ -305,5 +286,4 @@ def write_response_to_db(client_id, request_id, ReturnValue):
 
 
 if __name__ == '__main__':
-    init()
     app.run(host = '0.0.0.0', port = 5000)

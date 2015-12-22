@@ -50,339 +50,152 @@ def get_response_queue_url(client_id):
         url =  queue_info['url']
     else:
         url = create_response_queue(client_id)
-    print 'get response queue url'
-    print url
     return url
+
+def send_to_request_queue(qName, op, response_queue_url, body, service_url):
+    request_id = create_request_id()
+    queue = sqs.get_queue_url(QueueName = qName)
+    response = sqs.send_message(QueueUrl = queue['QueueUrl'], MessageBody = 'boto3', MessageAttributes = {
+            'op': {
+                'StringValue': op,
+                'DataType': 'String'
+            },
+            'response_queue_url': {
+                'StringValue': response_queue_url,
+                'DataType': 'String'
+            },
+            'request_id': {
+                'StringValue': request_id,
+                'DataType': 'String'
+            },
+            'body': {
+                'StringValue': body,
+                'DataType': 'String'
+            },
+            'service_url': {
+                'StringValue': service_url,
+                'DataType': 'String'
+            }
+        })
+    return response
 
 def init():
     print 'init'
-    create_request_queues()
+    #create_request_queues()
     queue_finance = sqs.get_queue_url(QueueName = queue_finance_name)
     queue_k12 = sqs.get_queue_url(QueueName = queue_k12_name)
     print queue_finance['QueueUrl']
     print queue_k12['QueueUrl']
-    '''
-    response = sqs.receive_message(QueueUrl = queue_finance['QueueUrl'], MessageAttributeNames=["All"], MaxNumberOfMessages = 10)
-    print 'get message from finance queue'
-    print response
-    print 'print each request'
-    for message in response['Messages']:
-        print '....'
-        print message['MessageAttributes']
-    '''
 
 ### put the finance microservice request into corresponding sqs
 @app.route('/public/finance', methods = ['GET'])
 def get_finance_info():
     client_id = request.headers.get('client_id')
-    request_id = create_request_id()
     url = get_response_queue_url(client_id)
-    queue_finance = sqs.get_queue_url(QueueName = queue_finance_name)
-    response = sqs.send_message(QueueUrl = queue_finance['QueueUrl'], MessageBody = 'boto3', MessageAttributes = {
-            'op': {
-                'StringValue': 'GET',
-                'DataType': 'String'
-            },
-            'response_queue_url': {
-                'StringValue': url,
-                'DataType': 'String'
-            },
-            'request_id': {
-                'StringValue': request_id,
-                'DataType': 'String'
-            },
-            'resource_id': {
-                'StringValue': 'ALL',
-                'DataType': 'String'
-            },
-            'service_url': {
-                'StringValue': '/private/finance',
-                'DataType': 'String'
-            }
-        })
-    return Response('{"_status": "SUCCESS", "_success": {"message": "Put the request into finance queue", "code": 200}}', mimetype='application/json', status=200)
-
+    response = send_to_request_queue(queue_finance_name, 'GET', url, 'None', '/private/finance')
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
 
 @app.route('/public/finance/<studentid>', methods = ['GET'])
-def get_finance_info_by_uni(studentid):
+def get_finance_info_by_studentid(studentid):
     client_id = request.headers.get('client_id')
-    request_id = create_request_id()
     url = get_response_queue_url(client_id)
-    queue_finance = sqs.get_queue_url(QueueName = queue_finance_name)
-    response = sqs.send_message(QueueUrl = queue_finance['QueueUrl'], MessageBody = 'boto3', MessageAttributes = {
-            'op': {
-                'StringValue': 'GET',
-                'DataType': 'String'
-            },
-            'response_queue_url': {
-                'StringValue': url,
-                'DataType': 'String'
-            },
-            'request_id': {
-                'StringValue': request_id,
-                'DataType': 'String'
-            },
-            'resource_id': {
-                'StringValue': studentid,
-                'DataType': 'String'
-            },
-            'service_url': {
-                'StringValue': '/private/finance/' + studentid,
-                'DataType': 'String'
-            }
-        })
-    return Response('{"_status": "SUCCESS", "_success": {"message": "Put the request into finance queue", "code": 200}}', mimetype='application/json', status=200)
+    response = send_to_request_queue(queue_finance_name, 'GET', url, 'None', '/private/finance/' + studentid)
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
+
 
 @app.route("/public/finance", methods = ['POST'])
 def post_finance_info():
-        content = request.get_json(force = True)
-        headers = {'content-type': 'application/json'}
-        response = requests.post(eve_url, data=json.dumps(content), headers = headers)
-        return Response(response.content, mimetype='application/json', status=200)
+    client_id = request.headers.get('client_id')
+    url = get_response_queue_url(client_id)
+    content = request.get_json(force = True)
+    str_json = json.dumps(content)
+    response = send_to_request_queue(queue_finance_name, 'POST', url, str_json, '/private/finance')
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
+
+@app.route("/public/finance/<studentid>", methods = ['PUT'])
+def update_finance_info(studentid):
+    client_id = request.headers.get('client_id')
+    url = get_response_queue_url(client_id)
+    content = request.get_json(force = True)
+    str_json = json.dumps(content)
+    response = send_to_request_queue(queue_finance_name, 'POST', url, str_json, '/private/finance/' + studentid)
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
+
+@app.route('/public/finance', methods=['DELETE'])
+def delete_finance_info():
+    client_id = request.headers.get('client_id')
+    url = get_response_queue_url(client_id)
+    response = send_to_request_queue(queue_finance_name, 'DELETE', url, 'None', '/private/finance')
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
+
+@app.route('/public/finance/<studentid>', methods=['DELETE'])
+def delete_finance_info_by_studentid(studentid):
+    client_id = request.headers.get('client_id')
+    url = get_response_queue_url(client_id)
+    response = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/finance/studentid/' + studentid)
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
 
 ### put the k12 microservice request into corresponding sqs
 @app.route('/public/k12', methods = ['GET'])
 def get_k12_info():
     client_id = request.headers.get('client_id')
-    request_id = create_request_id()
     url = get_response_queue_url(client_id)
-    queue_k12 = sqs.get_queue_url(QueueName = queue_k12_name)
-    try:
-        response = sqs.send_message(QueueUrl = queue_k12['QueueUrl'], MessageBody = 'boto3', MessageAttributes = {
-                'op': {
-                    'StringValue': 'GET',
-                    'DataType': 'String'
-                },
-                'response_queue_url': {
-                    'StringValue': url,
-                    'DataType': 'String'
-                },
-                'request_id': {
-                    'StringValue': request_id,
-                    'DataType': 'String'
-                },
-                'resource_id': {
-                    'StringValue': 'ALL',
-                    'DataType': 'String'
-                },
-                'service_url': {
-                    'StringValue': '/private/k12',
-                    'DataType': 'String'
-                }
-            })
-    except Error as e:
-        print e
-    return Response('{"_status": "SUCCESS", "_success": {"message": "Put the request into k12 queue", "code": 200}}', mimetype='application/json', status=200)
+    response = send_to_request_queue(queue_k12_name, 'GET', url, 'None', '/private/k12')
+    print response
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
 
 @app.route('/public/k12/studentid/<studentid>', methods = ['GET'])
 def get_k12_info_by_studentid(studentid):
     client_id = request.headers.get('client_id')
-    request_id = create_request_id()
     url = get_response_queue_url(client_id)
-    queue_k12 = sqs.get_queue_url(QueueName = queue_k12_name)
-    try:
-        response = sqs.send_message(QueueUrl = queue_k12['QueueUrl'], MessageBody = 'boto3', MessageAttributes = {
-                'op': {
-                    'StringValue': 'GET',
-                    'DataType': 'String'
-                },
-                'response_queue_url': {
-                    'StringValue': url,
-                    'DataType': 'String'
-                },
-                'request_id': {
-                    'StringValue': request_id,
-                    'DataType': 'String'
-                },
-                'resource_id': {
-                    'StringValue': 'ALL',
-                    'DataType': 'String'
-                },
-                'service_url': {
-                    'StringValue': '/private/k12/studentid/' + studentid,
-                    'DataType': 'String'
-                }
-            })
-    except Error as e:
-        print e
-    return Response('{"_status": "SUCCESS", "_success": {"message": "Put the request into k12 queue", "code": 200}}', mimetype='application/json', status=200)
+    response = send_to_request_queue(queue_k12_name, 'GET', url, 'None', '/private/k12/studentid/' + studentid)
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
 
 @app.route('/public/k12/studentid/<studentid>/schoolid/<schoolid>', methods=['GET'])
 def get_k12_info_by_studentid_schoolid(studentid, schoolid):
     client_id = request.headers.get('client_id')
-    request_id = create_request_id()
     url = get_response_queue_url(client_id)
-    queue_k12 = sqs.get_queue_url(QueueName = queue_k12_name)
-    try:
-        response = sqs.send_message(QueueUrl = queue_k12['QueueUrl'], MessageBody = 'boto3', MessageAttributes = {
-                'op': {
-                    'StringValue': 'GET',
-                    'DataType': 'String'
-                },
-                'response_queue_url': {
-                    'StringValue': url,
-                    'DataType': 'String'
-                },
-                'request_id': {
-                    'StringValue': request_id,
-                    'DataType': 'String'
-                },
-                'resource_id': {
-                    'StringValue': 'ALL',
-                    'DataType': 'String'
-                },
-                'service_url': {
-                    'StringValue': '/private/k12/studentid/' + studentid + '/schoolid/' + schoolid,
-                    'DataType': 'String'
-                }
-            })
-    except Error as e:
-        print e
-    return Response('{"_status": "SUCCESS", "_success": {"message": "Put the request into k12 queue", "code": 200}}', mimetype='application/json', status=200)
+    response = send_to_request_queue(queue_k12_name, 'GET', url, 'None', '/private/k12/studentid/' + studentid + '/schoolid/' + schoolid)
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
 
 @app.route('/public/k12', methods = ['POST'])
 def post_k12_info():
     client_id = request.headers.get('client_id')
-    request_id = create_request_id()
     url = get_response_queue_url(client_id)
-    queue_k12 = sqs.get_queue_url(QueueName = queue_k12_name)
     content = request.get_json(force = True)
     str_json = json.dumps(content)
-    try:
-        response = sqs.send_message(QueueUrl = queue_k12['QueueUrl'], MessageBody = 'boto3', MessageAttributes = {
-                'op': {
-                    'StringValue': 'POST',
-                    'DataType': 'String'
-                },
-                'response_queue_url': {
-                    'StringValue': url,
-                    'DataType': 'String'
-                },
-                'request_id': {
-                    'StringValue': request_id,
-                    'DataType': 'String'
-                },
-                'resource_id': {
-                    'StringValue': 'None',
-                    'DataType': 'String'
-                },
-                'service_url': {
-                    'StringValue': '/private/k12',
-                    'DataType': 'String'
-                },
-                'body': {
-                    'StringValue': str_json,
-                    'DataType': 'String'
-                }
-            })
-    except Error as e:
-        print e
-    return Response('{"_status": "SUCCESS", "_success": {"message": "Put the request into k12 queue", "code": 200}')
+    response = send_to_request_queue(queue_k12_name, 'POST', url, str_json, '/private/k12')
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
 
 @app.route('/public/k12/studentid/<studentid>/schoolid/<schoolid>', methods=['PUT'])
 def update_k12_info(studentid, schoolid):
     client_id = request.headers.get('client_id')
-    request_id = create_request_id()
     url = get_response_queue_url(client_id)
-    queue_k12 = sqs.get_queue_url(QueueName = queue_k12_name)
     content = request.get_json(force = True)
     str_json = json.dumps(content)
-    try:
-        response = sqs.send_message(QueueUrl = queue_k12['QueueUrl'], MessageBody = 'boto3', MessageAttributes = {
-                'op': {
-                    'StringValue': 'PUT',
-                    'DataType': 'String'
-                },
-                'response_queue_url': {
-                    'StringValue': url,
-                    'DataType': 'String'
-                },
-                'request_id': {
-                    'StringValue': request_id,
-                    'DataType': 'String'
-                },
-                'resource_id': {
-                    'StringValue': 'None',
-                    'DataType': 'String'
-                },
-                'service_url': {
-                    'StringValue': '/private/k12/studentid/' + studentid + '/schoolid/' + schoolid,
-                    'DataType': 'String'
-                },
-                'body': {
-                    'StringValue': str_json,
-                    'DataType': 'String'
-                }
-            })
-    except Error as e:
-        print e
-    return Response('{"_status": "SUCCESS", "_success": {"message": "Put the request into k12 queue", "code": 200}')
+    response = send_to_request_queue(queue_k12_name, 'PUT', url, str_json, '/private/k12/studentid/' + studentid + '/schoolid/' + schoolid)
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
 
 @app.route('/public/k12', methods=['DELETE'])
 def delete_k12_info():
     client_id = request.headers.get('client_id')
-    request_id = create_request_id()
     url = get_response_queue_url(client_id)
-    queue_k12 = sqs.get_queue_url(QueueName = queue_k12_name)
-    try:
-        response = sqs.send_message(QueueUrl = queue_k12['QueueUrl'], MessageBody = 'boto3', MessageAttributes = {
-                'op': {
-                    'StringValue': 'DELETE',
-                    'DataType': 'String'
-                },
-                'response_queue_url': {
-                    'StringValue': url,
-                    'DataType': 'String'
-                },
-                'request_id': {
-                    'StringValue': request_id,
-                    'DataType': 'String'
-                },
-                'resource_id': {
-                    'StringValue': 'None',
-                    'DataType': 'String'
-                },
-                'service_url': {
-                    'StringValue': '/private/k12',
-                    'DataType': 'String'
-                }
-            })
-    except Error as e:
-        print e
-    return Response('{"_status": "SUCCESS", "_success": {"message": "Put the request into k12 queue", "code": 200}')
+    response = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/k12')
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
+
+@app.route('/public/k12/studentid/<studentid>', methods=['DELETE'])
+def delete_k12_info_by_studentid(studentid):
+    client_id = request.headers.get('client_id')
+    url = get_response_queue_url(client_id)
+    response = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/k12/studentid/' + studentid)
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
 
 @app.route('/public/k12/studentid/<studentid>/schoolid/<schoolid>', methods=['DELETE'])
 def delete_k12_info_by_studentid_schoolid(studentid, schoolid):
     client_id = request.headers.get('client_id')
-    request_id = create_request_id()
     url = get_response_queue_url(client_id)
-    queue_k12 = sqs.get_queue_url(QueueName = queue_k12_name)
-    try:
-        response = sqs.send_message(QueueUrl = queue_k12['QueueUrl'], MessageBody = 'boto3', MessageAttributes = {
-                'op': {
-                    'StringValue': 'DELETE',
-                    'DataType': 'String'
-                },
-                'response_queue_url': {
-                    'StringValue': url,
-                    'DataType': 'String'
-                },
-                'request_id': {
-                    'StringValue': request_id,
-                    'DataType': 'String'
-                },
-                'resource_id': {
-                    'StringValue': 'None',
-                    'DataType': 'String'
-                },
-                'service_url': {
-                    'StringValue': '/private/k12/studentid/' + studentid + '/schoolid/' + schoolid,
-                    'DataType': 'String'
-                }
-            })
-    except Error as e:
-        print e
-    return Response('{"_status": "SUCCESS", "_success": {"message": "Put the request into k12 queue", "code": 200}')
+    response = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/k12/studentid/' + studentid + '/schoolid/' + schoolid)
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "code": 200}', mimetype='application/json', status=200)
 
 @app.route('/', methods=['GET'])
 def list_api():

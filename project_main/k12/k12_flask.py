@@ -111,10 +111,10 @@ def delete_student_and_school(studentid, schoolid):
     return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response)
 
 def send_to_response_queue(resp_queue_url, req_id, json_object):
-    print(resp_queue_url)
+    print(json_object)
     response = sqs_client.send_message(QueueUrl = resp_queue_url, MessageBody = 'boto3', MessageAttributes = {
                 'ReturnValue': {
-                    'StringValue': json.dumps(json_object),
+                    'StringValue': json.dumps(json_object, cls=DecimalEncoder),
                     'DataType': 'String'
                 },
                 'RequestID':{
@@ -129,7 +129,6 @@ if __name__ == "__main__":
     table = dynamodb.Table('k12')
     sqs_client = boto3.client('sqs')
     app.run(host='localhost', port=9000)
-    #pull_message()
 
 
 

@@ -134,6 +134,15 @@ def update_finance_info(studentid):
     response, request_id = send_to_request_queue(queue_finance_name, 'POST', url, str_json, '/private/finance/' + studentid)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
+@app.route("/public/finance/<studentid>/courses", methods = ['PUT'])
+def update_finance_info_by_studentid_courses(studentid):
+    client_id = request.headers.get('client_id')
+    url = get_response_queue_url(client_id)
+    content = request.get_json(force = True)
+    str_json = json.dumps(content)
+    response, request_id = send_to_request_queue(queue_finance_name, 'POST', url, str_json, '/private/finance/' + studentid + '/courses')
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
+
 @app.route('/public/finance', methods=['DELETE'])
 def delete_finance_info():
     client_id = request.headers.get('client_id')
@@ -146,6 +155,13 @@ def delete_finance_info_by_studentid(studentid):
     client_id = request.headers.get('client_id')
     url = get_response_queue_url(client_id)
     response, request_id = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/finance/studentid/' + studentid)
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
+
+@app.route("/public/finance/<student_id>/courses", methods = ['DELETE'])
+def delete_finance_info_by_studentid_courses(studentid):
+    client_id = request.headers.get('client_id')
+    url = get_response_queue_url(client_id)
+    response, request_id = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/finance/studentid/' + studentid + '/courses')
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 ### put the k12 microservice request into corresponding sqs

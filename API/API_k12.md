@@ -8,7 +8,7 @@ Send a request to list all the student information. The response contains a requ
 
 **Sample Request**
 
-GET {ServerPath}/public/k12
+GET {ServerPath}/private/k12
 
 Headers:{
     client_id: 1
@@ -44,7 +44,7 @@ Headers:{
 
 
 Fetch result from previous request. Here corresponds to the request of: 
-GET {ServerPath}/public/k12
+GET {ServerPath}/private/k12
 
 **Sample Request**
 
@@ -115,13 +115,13 @@ GET {ServerPath}/response?client_id=1&RequestID=45585d6e0b898769e51eafb1ed35d5b3
 ---
 
 
-### GET **/public/k12/studentid/\<studentid\>**
+### GET **/private/k12/studentid/\<studentid\>**
 
 Send a request to list student information by studentid. It contains information of all schools of which the student has record. The response contains the request ID which is used to retrieve the student information
 
 **Sample Request**
 
-GET {ServerPath}/public/k12/studentid/qs2147
+GET {ServerPath}/private/k12/studentid/qs2147
 
 Headers:{
     client_id: 1
@@ -156,7 +156,7 @@ Headers:{
 ### GET **/response**
 
 Fetch result from previous request. Here corresponds to the request of: 
-GET {ServerPath}/public/k12/studentid/qs2147
+GET {ServerPath}/private/k12/studentid/qs2147
 
 **Sample Request**
 
@@ -200,13 +200,13 @@ GET {ServerPath}/response?client_id=1&RequestID=967927cbac720cf50a34aeade6730ec5
 * 500 Internal Server Error
 
 ---
-### GET **/public/k12/studentid/\<studentid\>/schoolid/\<schoolid\>**
+### GET **/private/k12/studentid/\<studentid\>/schoolid/\<schoolid\>**
 
 Send a request to list student information by studentid and schoolid. The response contains the request ID which is used to retrieve the student information
 
 **Sample Request**
 
-GET {ServerPath}/public/k12/studentid/qs2147/NJU
+GET {ServerPath}/private/k12/studentid/qs2147/NJU
 
 Headers:{
     client_id: 1
@@ -240,7 +240,7 @@ Headers:{
 ### GET **/response**
 
 Fetch result from previous request. Here corresponds to the request of: 
-GET {ServerPath}/public/k12/studentid/qs2147/NJU
+GET {ServerPath}/private/k12/studentid/qs2147/NJU
 
 **Sample Request**
 
@@ -275,13 +275,13 @@ GET {ServerPath}/response?client_id=1&RequestID=96aab8d5b51b90f4e0d52a6cae63b323
 * 500 Internal Server Error
 
 ---
-### POST **/public/k12**
+### POST **/private/k12**
 
 send a request to create new student with specifying schoolid and JSON body. The response contains the request ID which is used to retrieve the POST status information
 
 **Sample Request**
 
-POST {ServerPath}/public/k12
+POST {ServerPath}/private/k12
 
 Headers:{
     Content-Type: application/json
@@ -330,7 +330,7 @@ Headers:{
 ### GET **/response**
 
 Fetch result from previous request. Here corresponds to the request of: 
-POST {ServerPath}/public/k12
+POST {ServerPath}/private/k12
 
 **Sample Request**
 
@@ -352,13 +352,13 @@ GET {ServerPath}/response?client_id=1&RequestID=6628811e04ca022d925e7c9385fe5aed
 * 500 Internal Server Error
 
 ---
-### PUT **/public/k12/studentid/\<studentid\>/schoolid/\<schoolid\>**
+### PUT **/private/k12/studentid/\<studentid\>/schoolid/\<schoolid\>**
 
 Send a request to update student info with specifying schoolid and JSON body. The response contains the request ID which is used to retrieve the PUT status information. 
 
 **Sample Request**
 
-PUT {ServerPath}/public/k12/studentid/qs2147/schoolid/ColumbiaUniversity
+PUT {ServerPath}/private/k12/studentid/qs2147/schoolid/ColumbiaUniversity
 
 Headers:{
     Content-Type: application/json
@@ -404,7 +404,7 @@ Headers:{
 ### GET **/response**
 
 Fetch result from previous request. Here corresponds to the request of: 
-PUT {ServerPath}/public/k12/studentid/qs2147/schoolid/ColumbiaUniversity
+PUT {ServerPath}/private/k12/studentid/qs2147/schoolid/ColumbiaUniversity
 
 **Sample Request**
 
@@ -435,13 +435,13 @@ GET {ServerPath}/response?client_id=1&RequestID=00d0cbf0143432cfffb68aab22466183
 * 500 Internal Server Error
 
 ---
-### DELETE **/public/k12/studentid/\<studentid\>/schoolid/\<schoolid\>**
+### DELETE **/private/k12/studentid/\<studentid\>/schoolid/\<schoolid\>**
 
 Send a request to delete student by studentid and schoolid. The response contains the request ID which is used to retrieve the DELETE status information
 
 **Sample Request**
 
-DELETE {ServerPath}/public/k12/studentid/qs2147/schoolid/NJU
+DELETE {ServerPath}/private/k12/studentid/qs2147/schoolid/NJU
 
 Headers:{
     client_id: 1
@@ -476,7 +476,7 @@ Headers:{
 ### GET **/response**
 
 Fetch result from previous request. Here corresponds to the request of: 
-DELETE {ServerPath}/public/k12/studentid/qs2147/schoolid/NJU
+DELETE {ServerPath}/private/k12/studentid/qs2147/schoolid/NJU
 
 **Sample Request**
 

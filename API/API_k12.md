@@ -200,6 +200,91 @@ GET {ServerPath}/response?client_id=1&RequestID=967927cbac720cf50a34aeade6730ec5
 * 500 Internal Server Error
 
 ---
+### GET **/private/k12/schoolid/\<schoolid\>**
+
+Send a request to list information by schoolid. It contains information of all studnets who have record of current school. The response contains the request ID which is used to retrieve the information
+
+**Sample Request**
+
+GET {ServerPath}/private/k12/schoolid/CMU
+
+Headers:{
+    client_id: 1
+}
+
+**Sample Success Response**
+
+```json
+{
+    "_status": "SUCCESS",
+    "_success": {
+        "message": {
+            "MD5OfMessageBody": "6686853da3491a56c98917cc5c4ddea2",
+            "MD5OfMessageAttributes": "0437266fd671aea446ebc95e12d08030",
+            "ResponseMetadata": {
+                "HTTPStatusCode": 200,
+                "RequestId": "b52dc93a-8518-5430-b743-87ce640c7fd1"
+            },
+            "MessageId": "b7ad7492-48a3-4fea-ba70-062d01047d59"
+        },
+        "request_id": "2342928b60399a59abee1e24fb514951cee93472",
+        "code": 200
+    }
+}
+```
+
+**Possible Error Response**  
+* 500 Internal Server Error
+
+
+---
+### GET **/response**
+
+Fetch result from previous request. Here corresponds to the request of: 
+GET {ServerPath}/private/k12/schoolid/CMU
+
+**Sample Request**
+
+GET {ServerPath}/response?client_id=1&RequestID=2342928b60399a59abee1e24fb514951cee93472
+
+**Sample Success Response**
+
+```json
+{
+    "Count": 2,
+    "Items": [
+        {
+            "info": {
+                "DOB": "19920813",
+                "lastname": "yang",
+                "firstname": "yang"
+            },
+            "schoolid": "CMU",
+            "studentid": "yy1234"
+        },
+        {
+            "info": {
+                "DOB": "19920813",
+                "lastname": "du",
+                "firstname": "cheng"
+            },
+            "schoolid": "CMU",
+            "studentid": "cd2789"
+        }
+    ],
+    "ScannedCount": 6,
+    "ResponseMetadata": {
+        "HTTPStatusCode": 200,
+        "RequestId": "eee3afc4-43a6-4f76-ab75-98ced4c04918"
+    }
+}
+```
+
+**Possible Error Response**  
+* 404 Resource not found  
+* 500 Internal Server Error
+
+---
 ### GET **/private/k12/studentid/\<studentid\>/schoolid/\<schoolid\>**
 
 Send a request to list student information by studentid and schoolid. The response contains the request ID which is used to retrieve the student information

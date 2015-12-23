@@ -257,6 +257,33 @@ Headers:{
 * 500 Internal Server Error
 
 
+---
+### GET **/response?client_id=[client_id]&RequestID=[request_id]**
 
+Get the result for specific request from response SQS
+
+**Sample Request**
+
+GET 
+{ServerPath}/public/response?client_id=1&RequestID=8fb3f7c85e0defd99d14dd6e004107fcf67a377f
+
+**Sample Success Response**
+
+```json
+{
+    "_id": {
+        "$oid": "567730a00640fd33bc182a7b"
+    },
+    "result": "{\"name\":\"Bo Jin\", \"uni\":\"bj2327\"}",
+    "client_id": "1",
+    "request_id": "1"
+}
+```
+
+**Possible Error Response**  
+* 500 Internal Server Error
+
+
+--- 
 
 

@@ -273,7 +273,7 @@ def get_response():
             return Response("The response is not valid", status=500)
         response_cache[client_id][this_request_id] = ReturnValue  # add it to cache
         write_response_to_db(client_id, this_request_id, ReturnValue)  # add it to db
-        # sqs.delete_message(QueueUrl=queueUrl, ReceiptHandle=receiptHandle)
+        sqs.delete_message(QueueUrl=queueUrl, ReceiptHandle=receiptHandle)
         logging.info("read request_id %s from sqs"%this_request_id)
         if not request_id or request_id==this_request_id:  # if match or does not provide request_id, return
             return Response(ReturnValue, mimetype='application/json', status=200)

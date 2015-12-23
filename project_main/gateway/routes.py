@@ -16,6 +16,7 @@ mongo_url = 'mongodb://%s:%s@ds033915.mongolab.com:33915/project2' % (mongo_cred
 mongo = MongoClient(mongo_url)
 response_queue_url = {}  # map from client_id(which is also the id of response queue) to queueUrl
 response_cache = {}
+response_in_sqs = {}
 sqs = boto3.client('sqs')
 app = Flask(__name__)
 queue_finance_name = 'finance'
@@ -198,6 +199,12 @@ def delete_k12_info_by_studentid_schoolid(studentid, schoolid):
     response, request_id = send_to_request_queue(queue_k12_name, 'DELETE', 'None', '/private/k12/studentid/' + studentid + '/schoolid/' + schoolid, request.headers)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
+@app.route('/public/k12/long_request')
+def send_long_request():
+    response, request_id = send_to_request_queue(queue_k12_name, 'GET', 'None', '/private/k12/long_request', request.headers)
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
+
+
 @app.route('/', methods=['GET'])
 def list_api():
     output = []
@@ -220,6 +227,10 @@ def get_response():
     args = request.args
     client_id = str(args.get("client_id", ""))  # client_id is also the id of response queue
     request_id = str(args.get("RequestID", ""))  # if request_id is None, then return the first one in queue
+
+    args_hash = hash(frozenset(args.items()))
+    this_in_sqs = response_in_sqs.setdefault(args_hash, True)  # we want to avoid hitting db if it wasn't in sqs before
+
     if not client_id:
         return Response("client_id is empty", status=400)
 
@@ -230,7 +241,7 @@ def get_response():
         return Response("This client_id has not been registered yet", status=400)
 
     this_cache = response_cache.setdefault(client_id, {})
-    if request_id:  # iff request_id is not empty
+    if request_id and this_in_sqs:  # if request_id is not empty and it's in sqs
         # 1. if it's in cache
         if request_id in this_cache:
             logging.info("read from cache")
@@ -279,6 +290,7 @@ def get_response():
 
     # exit loop means message is empty
     logging.info("No ReturnValue")
+    response_in_sqs[args_hash] = False
     return Response("There are no results for the request at this time. Please try again later", status=404)
 
 def write_response_to_db(client_id, request_id, ReturnValue):

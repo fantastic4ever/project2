@@ -164,6 +164,11 @@ def get_k12_info_by_studentid(studentid):
     response, request_id = send_to_request_queue(queue_k12_name, 'GET', 'None', '/private/k12/studentid/' + studentid, request.headers)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
+@app.route('public/k12/schoolid/<schoolid>', methods=['GET'])
+def get_school(schoolid):
+    response, request_id = send_to_request_queue(queue_k12_name, 'GET', 'None', '/private/k12/schoolid/' + schoolid, request.headers)
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
+
 @app.route('/public/k12/studentid/<studentid>/schoolid/<schoolid>', methods=['GET'])
 def get_k12_info_by_studentid_schoolid(studentid, schoolid):
     response, request_id = send_to_request_queue(queue_k12_name, 'GET', 'None', '/private/k12/studentid/' + studentid + '/schoolid/' + schoolid, request.headers)

@@ -145,12 +145,12 @@ def delete_finance_info():
 
 @app.route('/public/finance/<studentid>', methods=['DELETE'])
 def delete_finance_info_by_studentid(studentid):
-    response, request_id = send_to_request_queue(queue_k12_name, 'DELETE', 'None', '/private/finance/studentid/' + studentid, request.headers)
+    response, request_id = send_to_request_queue(queue_finance_name, 'DELETE', 'None', '/private/finance/studentid/' + studentid, request.headers)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 @app.route("/public/finance/<student_id>/courses", methods = ['DELETE'])
 def delete_finance_info_by_studentid_courses(studentid):
-    response, request_id = send_to_request_queue(queue_k12_name, 'DELETE', 'None', '/private/finance/studentid/' + studentid + '/courses', request.headers)
+    response, request_id = send_to_request_queue(queue_finance_name, 'DELETE', 'None', '/private/finance/studentid/' + studentid + '/courses', request.headers)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 ### put the k12 microservice request into corresponding sqs

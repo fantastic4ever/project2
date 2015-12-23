@@ -241,6 +241,8 @@ def get_response():
         return Response("This client_id has not been registered yet", status=400)
 
     this_cache = response_cache.setdefault(client_id, {})
+    logging.info("request_id: %s"%request_id)
+    logging.info("this_in_sqs: %s"%this_in_sqs)
     if request_id and this_in_sqs:  # if request_id is not empty and it's in sqs
         # 1. if it's in cache
         if request_id in this_cache:
@@ -260,6 +262,7 @@ def get_response():
             return Response(mongo_res["ReturnValue"], mimetype='application/json', status=200)
     
     # 3. else retrieve from sqs and put into cache and db
+    logging.info("not in cache or db")
     sqs_response = sqs.receive_message(QueueUrl=queueUrl, MessageAttributeNames=["All"])
     message = sqs_response.get("Messages", list())
     while message:
@@ -278,11 +281,16 @@ def get_response():
         except Exception, e:
             logging.error(message)
             return Response("The response is not valid", status=500)
+        logging.info("prepare to save to DB and cache...")
+        logging.info(client_id)
+        logging.info(this_request_id)
+        logging.info(ReturnValue)
         response_cache[client_id][this_request_id] = ReturnValue  # add it to cache
         write_response_to_db(client_id, this_request_id, ReturnValue)  # add it to db
         sqs.delete_message(QueueUrl=queueUrl, ReceiptHandle=receiptHandle)
         logging.info("read request_id %s from sqs"%this_request_id)
         if not request_id or request_id==this_request_id:  # if match or does not provide request_id, return
+            response_in_sqs[args_hash] = True
             return Response(ReturnValue, mimetype='application/json', status=200)
         else:  # else keep polling
             sqs_response = sqs.receive_message(QueueUrl=queueUrl, MessageAttributeNames=["All"])

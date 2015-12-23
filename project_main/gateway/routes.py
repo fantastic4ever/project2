@@ -23,6 +23,8 @@ queue_finance_name = 'finance'
 queue_k12_name = 'k12'
 db = mongo.get_default_database()
 response_queues = db.response_queues
+logging.basicConfig(filename='gateway.log',level=logging.INFO,format='%(asctime)s --- %(message)s')
+
 
 def create_request_queues():
     queue_finance = sqs.create_queue(QueueName = queue_finance_name)
@@ -33,6 +35,7 @@ def delete_request_queues():
     response = sqs.delete_queue(QueueUrl = 'https://queue.amazonaws.com/031864143155/' + queue_k12_name)
 
 def create_response_queue(client_id):
+    logging.info("in create_response_queue")
     queue = sqs.create_queue(QueueName = client_id)
     try:
         sqs.add_permission(QueueUrl = queue['QueueUrl'], Label = 'AllOp', AWSAccountIds = ['559115960312', '308367428478'], Actions = ['*'])
@@ -47,12 +50,16 @@ def create_request_id():
     return hash.hexdigest()
 
 def get_response_queue_url(client_id):
-    queue_info = response_queues.find_one({'client_id': client_id})
+    if client_id in response_queue_url:  # if in cache
+        return response_queue_url[client_id]
+
+    queue_info = response_queues.find_one({'client_id': client_id})  # if in mongo
     url = ''
     if queue_info:
         url =  queue_info['url']
-    else:
+    else:  # client id not registered yet
         url = create_response_queue(client_id)
+        response_queue_url[client_id] = url  # add the new mapping to cache
     return url
 
 def send_to_request_queue(qName, op, response_queue_url, body, service_url):
@@ -81,14 +88,6 @@ def send_to_request_queue(qName, op, response_queue_url, body, service_url):
             }
         })
     return response
-
-def init():
-    print 'init'
-    #create_request_queues()
-    queue_finance = sqs.get_queue_url(QueueName = queue_finance_name)
-    queue_k12 = sqs.get_queue_url(QueueName = queue_k12_name)
-    print queue_finance['QueueUrl']
-    print queue_k12['QueueUrl']
 
 ### put the finance microservice request into corresponding sqs
 @app.route('/public/finance', methods = ['GET'])
@@ -210,27 +209,17 @@ def list_api():
 
     return html%"</p><p>".join(sorted(output))
 
-""" get queue info from database and update response_queue_url """
-@app.route('/response_queue_url', methods=['GET'])
-def get_response_queue_url_from_db():
-    mongo_res = mongo.project2.response_queues.find()
-    for res in mongo_res:
-        url = res.get("url")
-        client_id = res.get("client_id")
-        if url and client_id:
-            response_queue_url[client_id] = url
-    return Response("update response_queue_url", status=200)
-
 @app.route('/response', methods=['GET'])
 def get_response():
     args = request.args
     client_id = str(args.get("client_id", ""))  # client_id is also the id of response queue
-    request_id = str(args.get("request_id", ""))  # if request_id is None, then return the first one in queue
+    request_id = str(args.get("RequestID", ""))  # if request_id is None, then return the first one in queue
     if not client_id:
         return Response("client_id is empty", status=400)
 
     # queueUrl = "https://sqs.us-east-1.amazonaws.com/308367428478/test"
-    queueUrl = response_queue_url.get(client_id)
+    # queueUrl = response_queue_url.get(client_id)
+    queueUrl = get_response_queue_url(client_id)
     if not queueUrl:
         return Response("This client_id has not been registered yet", status=400)
 
@@ -245,13 +234,13 @@ def get_response():
         mongo_res = mongo.project2.response_cache.find_one(
             {
                 "client_id": client_id,
-                "request_id": request_id
+                "RequestID": request_id
             }
         )
-        if mongo_res and mongo_res.get("result"):
-            response_cache[client_id][request_id] = mongo_res["result"]  # add it to cache
+        if mongo_res and mongo_res.get("ReturnValue"):
+            response_cache[client_id][request_id] = mongo_res["ReturnValue"]  # add it to cache
             logging.info("read from mongo")
-            return Response(mongo_res["result"], status=200)
+            return Response(mongo_res["ReturnValue"], status=200)
     
     # 3. else retrieve from sqs and put into cache and db
     sqs_response = sqs.receive_message(QueueUrl=queueUrl, MessageAttributeNames=["All"])
@@ -259,42 +248,42 @@ def get_response():
     while message:
         try:
             message = message[0]  # only one message in list
+            logging.info(message)
             receiptHandle = message["ReceiptHandle"]
             message_attributes = message["MessageAttributes"]
-            this_request_id = str(message_attributes["request_id"]["StringValue"])
-            result = message_attributes["result"]["StringValue"]
-            if not (receiptHandle and this_request_id and result):
+            this_request_id = str(message_attributes["RequestID"]["StringValue"])
+            ReturnValue = message_attributes["ReturnValue"]["StringValue"]
+            if not (receiptHandle and this_request_id and ReturnValue):
                 logging.error("receiptHandle: ", receiptHandle)
                 logging.error("this_request_id: ", this_request_id)
-                logging.error("result: ", result)
+                logging.error("ReturnValue: ", ReturnValue)
                 raise Exception('Invalid response')
         except Exception, e:
-            logging.error("message: ", str(message))
+            logging.error(message)
             return Response("The response is not valid", status=500)
-        response_cache[client_id][this_request_id] = result  # add it to cache
-        write_response_to_db(client_id, this_request_id, result)  # add it to db
+        response_cache[client_id][this_request_id] = ReturnValue  # add it to cache
+        write_response_to_db(client_id, this_request_id, ReturnValue)  # add it to db
         # sqs.delete_message(QueueUrl=queueUrl, ReceiptHandle=receiptHandle)
         logging.info("read request_id %s from sqs"%this_request_id)
         if not request_id or request_id==this_request_id:  # if match or does not provide request_id, return
-            return Response(result, status=200)
+            return Response(ReturnValue, status=200)
         else:  # else keep polling
             sqs_response = sqs.receive_message(QueueUrl=queueUrl, MessageAttributeNames=["All"])
             message = sqs_response.get("Messages", list())
 
     # exit loop means message is empty
-    logging.info("No result")
-    return Response("There no results for the request at this time. Please try again later", status=404)
+    logging.info("No ReturnValue")
+    return Response("There are no results for the request at this time. Please try again later", status=404)
 
-def write_response_to_db(client_id, request_id, result):
+def write_response_to_db(client_id, request_id, ReturnValue):
     mongo.project2.response_cache.insert_one(
         {
             "client_id": client_id,
-            "request_id": request_id,
-            "result": result
+            "RequestID": request_id,
+            "ReturnValue": ReturnValue
         }
     )
 
 
 if __name__ == '__main__':
-    init()
-    app.run(host = '127.0.0.1', port = 3000)
+    app.run(host = '0.0.0.0', port = 5000)

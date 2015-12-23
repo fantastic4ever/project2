@@ -1,14 +1,14 @@
-**k12 Microservice**
+**Router Service**
 ----------
-### GET **/k12**
+### GET **/public/k12**
 
 
-Send a request to list all the student information. The response contains a request ID which is used to retrieve all student information.
+Map the public url to private url, create response queues for new clients and send the request message to the k12's request queue.
 
 
 **Sample Request**
 
-GET {ServerPath}/private/k12
+GET {ServerPath}/public/k12
 
 Headers:{
     client_id: 1
@@ -22,14 +22,14 @@ Headers:{
     "_success": {
         "message": {
             "MD5OfMessageBody": "6686853da3491a56c98917cc5c4ddea2",
-            "MD5OfMessageAttributes": "aea417815355f8b5d413556be79c3dd1",
+            "MD5OfMessageAttributes": "569e011fc3b0998ca53ef0e24fd931e3",
             "ResponseMetadata": {
                 "HTTPStatusCode": 200,
-                "RequestId": "6cb573b5-208e-5239-acdb-3d410136588e"
+                "RequestId": "0304b39f-95c6-50b3-851e-fd6a930ffb49"
             },
-            "MessageId": "587645f8-df0a-4446-b954-dc44907ce944"
+            "MessageId": "73529d39-2c41-45a8-80f9-3451333e4757"
         },
-        "request_id": "45585d6e0b898769e51eafb1ed35d5b374f1452f",
+        "request_id": "6f2c7be27ea872be017d04a8c1740664509b1cd2",
         "code": 200
     }
 }
@@ -40,88 +40,15 @@ Headers:{
 * 500 Internal Server Error
 
 ---
-### GET **/response**
 
 
-Fetch result from previous request. Here corresponds to the request of: 
-GET {ServerPath}/private/k12
+### GET **/public/k12/studentid/\<studentid\>**
 
-**Sample Request**
-
-GET {ServerPath}/response?client_id=1&RequestID=45585d6e0b898769e51eafb1ed35d5b374f1452f
-
-**Sample Success Response**
-
-```json
-{
-    "Count": 5,
-    "Items": [
-        {
-            "info": {
-                "DOB": "19920813",
-                "lastname": "yang",
-                "firstname": "yang"
-            },
-            "schoolid": "CMU",
-            "studentid": "yy1234"
-        },
-        {
-            "info": {
-                "lastname": "sss",
-                "firstname": "sss"
-            },
-            "schoolid": "CU",
-            "studentid": "ss3231"
-        },
-        {
-            "info": {
-                "DOB": "19910813",
-                "lastname": "shen",
-                "firstname": "qiuyang"
-            },
-            "schoolid": "ColumbiaUniversity",
-            "studentid": "qs2147"
-        },
-        {
-            "info": {
-                "lastname": "Sun",
-                "firstname": "Yun"
-            },
-            "schoolid": "CU",
-            "studentid": "ys2816"
-        },
-        {
-            "info": {
-                "DOB": "19920813",
-                "lastname": "du",
-                "firstname": "cheng"
-            },
-            "schoolid": "CMU",
-            "studentid": "cd2789"
-        }
-    ],
-    "ScannedCount": 5,
-    "ResponseMetadata": {
-        "HTTPStatusCode": 200,
-        "RequestId": "d00bac87-6c68-478f-a847-71e9d0c75dad"
-    }
-}
-```
-
-**Possible Error Response**  
-* 404 Resource not found  
-* 500 Internal Server Error
-
----
-
-
-### GET **/private/k12/studentid/\<studentid\>**
-
-Send a request to list student information by studentid. It contains information of all schools of which the student has record. The response contains the request ID which is used to retrieve the student information
+Map the public url to private url, create response queues for new clients and send the request message to the k12's request queue.
 
 **Sample Request**
 
-GET {ServerPath}/private/k12/studentid/qs2147
+GET {ServerPath}/public/k12/studentid/qs2147
 
 Headers:{
     client_id: 1
@@ -135,14 +62,14 @@ Headers:{
     "_success": {
         "message": {
             "MD5OfMessageBody": "6686853da3491a56c98917cc5c4ddea2",
-            "MD5OfMessageAttributes": "3494565c8575f98b0da7042682798c4b",
+            "MD5OfMessageAttributes": "9a092abb122eb948adf7392608cc9df4",
             "ResponseMetadata": {
                 "HTTPStatusCode": 200,
-                "RequestId": "1bca4173-75b4-5f20-ad47-0f8750dae5ce"
+                "RequestId": "6436a567-3629-5162-b11f-eb9231e84782"
             },
-            "MessageId": "8d8fbfe2-8624-432e-ae0c-f96bc5f41642"
+            "MessageId": "11742668-50df-4350-9bc9-6834ccbf6f35"
         },
-        "request_id": "967927cbac720cf50a34aeade6730ec5ee54f643",
+        "request_id": "1a156d482b2336098766beb1df1c8c5f4dedd4f6",
         "code": 200
     }
 }
@@ -153,60 +80,13 @@ Headers:{
 
 
 ---
-### GET **/response**
+### GET **/public/k12/studentid/\<studentid\>/schoolid/\<schoolid\>**
 
-Fetch result from previous request. Here corresponds to the request of: 
-GET {ServerPath}/private/k12/studentid/qs2147
-
-**Sample Request**
-
-GET {ServerPath}/response?client_id=1&RequestID=967927cbac720cf50a34aeade6730ec5ee54f643
-
-**Sample Success Response**
-
-```json
-{
-    "Count": 2,
-    "Items": [
-        {
-            "info": {
-                "DOB": "19910813",
-                "lastname": "shen",
-                "firstname": "qiuyang"
-            },
-            "schoolid": "ColumbiaUniversity",
-            "studentid": "qs2147"
-        },
-        {
-            "info": {
-                "lastname": "shen",
-                "firstname": "qiuyang",
-                "hobby": "dota2"
-            },
-            "schoolid": "NJU",
-            "studentid": "qs2147"
-        }
-    ],
-    "ScannedCount": 2,
-    "ResponseMetadata": {
-        "HTTPStatusCode": 200,
-        "RequestId": "3456c4c8-23af-45ce-880c-49733404b66e"
-    }
-}
-```
-
-**Possible Error Response**  
-* 404 Resource not found  
-* 500 Internal Server Error
-
----
-### GET **/private/k12/studentid/\<studentid\>/schoolid/\<schoolid\>**
-
-Send a request to list student information by studentid and schoolid. The response contains the request ID which is used to retrieve the student information
+Map the public url to private url, create response queues for new clients and send the request message to the k12's request queue.
 
 **Sample Request**
 
-GET {ServerPath}/private/k12/studentid/qs2147/NJU
+GET {ServerPath}/public/k12/studentid/qs2147/schoolid/NJU
 
 Headers:{
     client_id: 1
@@ -220,14 +100,14 @@ Headers:{
     "_success": {
         "message": {
             "MD5OfMessageBody": "6686853da3491a56c98917cc5c4ddea2",
-            "MD5OfMessageAttributes": "1a6be77f0a49caa3f8978cf8007b5149",
+            "MD5OfMessageAttributes": "4fe2c0da13f4f9266724dd9e43a263f2",
             "ResponseMetadata": {
                 "HTTPStatusCode": 200,
-                "RequestId": "6a9a1fd8-9cd3-5944-b83a-512cba85db04"
+                "RequestId": "99300ab8-548a-5a67-b5d4-444d5ca7fb86"
             },
-            "MessageId": "9e43d2e4-b32c-45cd-a791-0f331ea1a2fa"
+            "MessageId": "e9628ed5-4581-470c-a1b8-e6a1e51d9b20"
         },
-        "request_id": "96aab8d5b51b90f4e0d52a6cae63b3235391b374",
+        "request_id": "8a4c8256d00ae1b5e087c6be88f637b2176380dd",
         "code": 200
     }
 }
@@ -236,52 +116,15 @@ Headers:{
 **Possible Error Response**  
 * 500 Internal Server Error
 
----
-### GET **/response**
 
-Fetch result from previous request. Here corresponds to the request of: 
-GET {ServerPath}/private/k12/studentid/qs2147/NJU
+---
+### POST **/public/k12**
+
+Map the public url to private url, create response queues for new clients and send the request message to the k12's request queue.
 
 **Sample Request**
 
-GET {ServerPath}/response?client_id=1&RequestID=96aab8d5b51b90f4e0d52a6cae63b3235391b374
-
-**Sample Success Response**
-
-```json
-{
-    "Count": 1,
-    "Items": [
-        {
-            "info": {
-                "lastname": "shen",
-                "firstname": "qiuyang",
-                "hobby": "dota2"
-            },
-            "schoolid": "NJU",
-            "studentid": "qs2147"
-        }
-    ],
-    "ScannedCount": 1,
-    "ResponseMetadata": {
-        "HTTPStatusCode": 200,
-        "RequestId": "a2e8f73d-469f-459c-91bc-bdeb00ae9536"
-    }
-}
-```
-
-**Possible Error Response**  
-* 404 Resource not found  
-* 500 Internal Server Error
-
----
-### POST **/private/k12**
-
-send a request to create new student with specifying schoolid and JSON body. The response contains the request ID which is used to retrieve the POST status information
-
-**Sample Request**
-
-POST {ServerPath}/private/k12
+POST {ServerPath}/public/k12
 
 Headers:{
     Content-Type: application/json
@@ -308,14 +151,14 @@ Headers:{
     "_success": {
         "message": {
             "MD5OfMessageBody": "6686853da3491a56c98917cc5c4ddea2",
-            "MD5OfMessageAttributes": "e5bd9fd7b23d77a23f0e8a43b9adccfa",
+            "MD5OfMessageAttributes": "c61fc314a368e1b1a2d1e0957643080e",
             "ResponseMetadata": {
                 "HTTPStatusCode": 200,
-                "RequestId": "52187e50-d8c5-5b2c-b0d5-30a4ffd358dc"
+                "RequestId": "766d72e3-49a7-5847-8cb6-3c1641d4b23c"
             },
-            "MessageId": "2553a910-4c4b-449b-af1d-4f2f6a407be0"
+            "MessageId": "51f65119-fbc0-4bb1-843e-7c4c338d9e7c"
         },
-        "request_id": "6628811e04ca022d925e7c9385fe5aed9a6f5796",
+        "request_id": "a0f8d4e7f908334939bc70813bb8d2120f078935",
         "code": 200
     }
 }
@@ -327,38 +170,13 @@ Headers:{
 
 
 ---
-### GET **/response**
+### PUT **/public/k12/studentid/\<studentid\>/schoolid/\<schoolid\>**
 
-Fetch result from previous request. Here corresponds to the request of: 
-POST {ServerPath}/private/k12
-
-**Sample Request**
-
-GET {ServerPath}/response?client_id=1&RequestID=6628811e04ca022d925e7c9385fe5aed9a6f5796
-
-**Sample Success Response**
-
-```json
-{
-    "ResponseMetadata": {
-        "HTTPStatusCode": 200,
-        "RequestId": "12f8de20-063b-4cf8-8468-22a0531b5deb"
-    }
-}
-```
-
-**Possible Error Response**  
-* 404 Resource not found  
-* 500 Internal Server Error
-
----
-### PUT **/private/k12/studentid/\<studentid\>/schoolid/\<schoolid\>**
-
-Send a request to update student info with specifying schoolid and JSON body. The response contains the request ID which is used to retrieve the PUT status information. 
+Map the public url to private url, create response queues for new clients and send the request message to the k12's request queue.
 
 **Sample Request**
 
-PUT {ServerPath}/private/k12/studentid/qs2147/schoolid/ColumbiaUniversity
+PUT {ServerPath}/public/k12/studentid/qs2147/schoolid/ColumbiaUniversity
 
 Headers:{
     Content-Type: application/json
@@ -383,14 +201,14 @@ Headers:{
     "_success": {
         "message": {
             "MD5OfMessageBody": "6686853da3491a56c98917cc5c4ddea2",
-            "MD5OfMessageAttributes": "3d4027b0b919b6f1d8332bfbd74adea5",
+            "MD5OfMessageAttributes": "808a8a68ce6a5ed46699419098f2d02c",
             "ResponseMetadata": {
                 "HTTPStatusCode": 200,
-                "RequestId": "22955ec0-312c-58db-a561-103419a1078d"
+                "RequestId": "df907b38-c3b8-5c33-b063-35cdcb0d5b13"
             },
-            "MessageId": "197ee777-2314-403b-8a60-63516eee012c"
+            "MessageId": "91e1825a-88c0-454e-aa2f-863b80010276"
         },
-        "request_id": "00d0cbf0143432cfffb68aab22466183b492537f",
+        "request_id": "c5206a0c8be7b18fcc968a2402f4ddae39149dd2",
         "code": 200
     }
 }
@@ -401,47 +219,13 @@ Headers:{
 * 500 Internal Server Error
 
 ---
-### GET **/response**
+### DELETE **/public/k12/studentid/\<studentid\>/schoolid/\<schoolid\>**
 
-Fetch result from previous request. Here corresponds to the request of: 
-PUT {ServerPath}/private/k12/studentid/qs2147/schoolid/ColumbiaUniversity
-
-**Sample Request**
-
-GET {ServerPath}/response?client_id=1&RequestID=00d0cbf0143432cfffb68aab22466183b492537f
-
-**Sample Success Response**
-
-```json
-{
-    "Attributes": {
-        "info": {
-            "DOB": "19910813",
-            "lastname": "shen",
-            "major": "computer engineering",
-            "age": 23,
-            "firstname": "yangqiu"
-        }
-    },
-    "ResponseMetadata": {
-        "HTTPStatusCode": 200,
-        "RequestId": "4b870476-651e-4a91-81d2-241e8af47876"
-    }
-}
-```
-
-**Possible Error Response**  
-* 404 Resource not found  
-* 500 Internal Server Error
-
----
-### DELETE **/private/k12/studentid/\<studentid\>/schoolid/\<schoolid\>**
-
-Send a request to delete student by studentid and schoolid. The response contains the request ID which is used to retrieve the DELETE status information
+Map the public url to private url, create response queues for new clients and send the request message to the k12's request queue.
 
 **Sample Request**
 
-DELETE {ServerPath}/private/k12/studentid/qs2147/schoolid/NJU
+DELETE {ServerPath}/public/k12/studentid/qs2147/schoolid/NJU
 
 Headers:{
     client_id: 1
@@ -455,14 +239,14 @@ Headers:{
     "_success": {
         "message": {
             "MD5OfMessageBody": "6686853da3491a56c98917cc5c4ddea2",
-            "MD5OfMessageAttributes": "e0be297f6eb1fe1d24dccb3472960b8c",
+            "MD5OfMessageAttributes": "3febec40a0e164b3804537811fb1880a",
             "ResponseMetadata": {
                 "HTTPStatusCode": 200,
-                "RequestId": "3fac353a-c059-55f1-8111-7bcee9dc63d3"
+                "RequestId": "459c5efd-dd04-549e-9894-1008d5eca3be"
             },
-            "MessageId": "0c9b5100-660f-4363-81bd-40f0ee5dff54"
+            "MessageId": "8e2aaca1-d386-4df9-a2eb-1baf40b3ac73"
         },
-        "request_id": "c72e76c2cdc8ac51827d9b9af71669b4604bfb61",
+        "request_id": "6086fa6b38d9a7da6cbe86949d5a541ccc6474e7",
         "code": 200
     }
 }
@@ -470,31 +254,6 @@ Headers:{
 
 **Possible Error Response**
 * 404 Resource not found
-* 500 Internal Server Error
-
----
-### GET **/response**
-
-Fetch result from previous request. Here corresponds to the request of: 
-DELETE {ServerPath}/private/k12/studentid/qs2147/schoolid/NJU
-
-**Sample Request**
-
-GET {ServerPath}/response?client_id=1&RequestID=c72e76c2cdc8ac51827d9b9af71669b4604bfb61
-
-**Sample Success Response**
-
-```json
-{
-    "ResponseMetadata": {
-        "HTTPStatusCode": 200,
-        "RequestId": "08db7512-3b59-4e12-831d-0c7d0e6434d4"
-    }
-}
-```
-
-**Possible Error Response**  
-* 404 Resource not found  
 * 500 Internal Server Error
 
 

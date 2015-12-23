@@ -105,6 +105,13 @@ def get_school(schoolid):
     )
     return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response)
 
+@app.route('/private/k12/long_request', methods=['GET'])  # this is a simulation for a request that takes a long period of time
+def get_long_request():
+    response = '{"result": "Hello World!"}'
+    time.sleep(5)  # sleep for 5 seconds
+    return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response)
+
+
 def send_to_response_queue(resp_queue_url, req_id, json_object):
     print(json_object)
     response = sqs_client.send_message(QueueUrl = resp_queue_url, MessageBody = 'boto3', MessageAttributes = {

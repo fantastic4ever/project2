@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, flash, session, redirect, url_for, jsonify, Response
-from sqlalchemy.sql import func
 import urllib
 import logging
 import json

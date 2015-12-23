@@ -114,6 +114,17 @@ def post_finance_info():
     response, request_id = send_to_request_queue(queue_finance_name, 'POST', url, str_json, '/private/finance')
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
+@app.route("/public/finance/<studentid>/courses", methods = ['POST'])
+def post_finance_info_by_studentid_courses(studentid):
+    print "/public/finance/<student_id>/courses"
+    print 'studentid: ' + str(studentid)
+    client_id = request.headers.get('client_id')
+    url = get_response_queue_url(client_id)
+    content = request.get_json(force = True)
+    str_json = json.dumps(content)
+    response, request_id = send_to_request_queue(queue_finance_name, 'POST', url, str_json, '/private/finance/' + studentid + '/courses')
+    return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
+
 @app.route("/public/finance/<studentid>", methods = ['PUT'])
 def update_finance_info(studentid):
     client_id = request.headers.get('client_id')

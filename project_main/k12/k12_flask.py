@@ -27,29 +27,17 @@ logging.basicConfig(filename="k12.log",
 @app.route('/private/k12', methods=['GET'])
 def get_all_student():
     response = table.scan()
-    if not response['Items']:
-        return "empty result"
-    for i in response['Items']:
-        print(i['schoolid'], ":", i['studentid'])
     return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response)
 
 
 @app.route('/private/k12/studentid/<studentid>', methods=['GET'])
 def get_student_all_school(studentid):
     response = table.query(KeyConditionExpression=Key('studentid').eq(studentid))
-    if not response['Items']:
-        return "empty result"
-    for i in response['Items']:
-        print(i['schoolid'], ":", i['studentid'])
     return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response)
 
 @app.route('/private/k12/studentid/<studentid>/schoolid/<schoolid>', methods=['GET'])
 def get_student_and_school(studentid, schoolid):
     response = table.query(KeyConditionExpression=Key('studentid').eq(studentid) & Key('schoolid').eq(schoolid))
-    if not response['Items']:
-        return "empty result"
-    for i in response['Items']:
-        print(i['schoolid'], ":", i['studentid'])
     return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response)
 
 
@@ -108,6 +96,13 @@ def delete_student_and_school(studentid, schoolid):
     except Error as e:
         print(e)
         return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), e)
+    return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response)
+
+@app.route('/private/k12/schoolid/<schoolid>', methods=['GET'])
+def get_school(schoolid):
+    response = table.scan(
+        FilterExpression=Key('schoolid').eq(schoolid)
+    )
     return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response)
 
 def send_to_response_queue(resp_queue_url, req_id, json_object):

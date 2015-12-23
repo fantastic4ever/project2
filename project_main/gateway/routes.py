@@ -61,7 +61,7 @@ def get_response_queue_url(client_id):
         response_queue_url[client_id] = url  # add the new mapping to cache
     return url
 
-def send_to_request_queue(qName, op, response_queue_url, body, service_url):
+def send_to_request_queue(qName, op, response_queue_url, body, service_url, e_tag):
     request_id = create_request_id()
     queue = sqs.get_queue_url(QueueName = qName)
     response = sqs.send_message(QueueUrl = queue['QueueUrl'], MessageBody = 'boto3', MessageAttributes = {
@@ -84,6 +84,10 @@ def send_to_request_queue(qName, op, response_queue_url, body, service_url):
             'service_url': {
                 'StringValue': service_url,
                 'DataType': 'String'
+            },
+            'e_tag': {
+                'StringValue': e_tag,
+                'DataType': 'String'
             }
         })
     return response, request_id
@@ -91,130 +95,177 @@ def send_to_request_queue(qName, op, response_queue_url, body, service_url):
 ### put the finance microservice request into corresponding sqs
 @app.route('/public/finance', methods = ['GET'])
 def get_finance_info():
+    print 'get_finance_info'
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
-    response, request_id = send_to_request_queue(queue_finance_name, 'GET', url, 'None', '/private/finance')
+    response, request_id = send_to_request_queue(queue_finance_name, 'GET', url, 'None', '/private/finance', e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 @app.route('/public/finance/<studentid>', methods = ['GET'])
 def get_finance_info_by_studentid(studentid):
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
-    response, request_id = send_to_request_queue(queue_finance_name, 'GET', url, 'None', '/private/finance/' + studentid)
+    response, request_id = send_to_request_queue(queue_finance_name, 'GET', url, 'None', '/private/finance/' + studentid, e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 
 @app.route("/public/finance", methods = ['POST'])
 def post_finance_info():
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
     content = request.get_json(force = True)
     str_json = json.dumps(content)
-    response, request_id = send_to_request_queue(queue_finance_name, 'POST', url, str_json, '/private/finance')
+    response, request_id = send_to_request_queue(queue_finance_name, 'POST', url, str_json, '/private/finance', e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 @app.route("/public/finance/<studentid>/courses", methods = ['POST'])
 def post_finance_info_by_studentid_courses(studentid):
-    print "/public/finance/<student_id>/courses"
-    print 'studentid: ' + str(studentid)
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
     content = request.get_json(force = True)
     str_json = json.dumps(content)
-    response, request_id = send_to_request_queue(queue_finance_name, 'POST', url, str_json, '/private/finance/' + studentid + '/courses')
+    response, request_id = send_to_request_queue(queue_finance_name, 'POST', url, str_json, '/private/finance/' + studentid + '/courses', e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 @app.route("/public/finance/<studentid>", methods = ['PUT'])
 def update_finance_info(studentid):
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
     content = request.get_json(force = True)
     str_json = json.dumps(content)
-    response, request_id = send_to_request_queue(queue_finance_name, 'POST', url, str_json, '/private/finance/' + studentid)
+    response, request_id = send_to_request_queue(queue_finance_name, 'PUT', url, str_json, '/private/finance/' + studentid, e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 @app.route("/public/finance/<studentid>/courses", methods = ['PUT'])
 def update_finance_info_by_studentid_courses(studentid):
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
     content = request.get_json(force = True)
     str_json = json.dumps(content)
-    response, request_id = send_to_request_queue(queue_finance_name, 'POST', url, str_json, '/private/finance/' + studentid + '/courses')
+    response, request_id = send_to_request_queue(queue_finance_name, 'PUT', url, str_json, '/private/finance/' + studentid + '/courses', e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 @app.route('/public/finance', methods=['DELETE'])
 def delete_finance_info():
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
-    response, request_id = send_to_request_queue(queue_finance_name, 'DELETE', url, 'None', '/private/finance')
+    response, request_id = send_to_request_queue(queue_finance_name, 'DELETE', url, 'None', '/private/finance', e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 @app.route('/public/finance/<studentid>', methods=['DELETE'])
 def delete_finance_info_by_studentid(studentid):
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
-    response, request_id = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/finance/studentid/' + studentid)
+    response, request_id = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/finance/studentid/' + studentid, e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 @app.route("/public/finance/<student_id>/courses", methods = ['DELETE'])
 def delete_finance_info_by_studentid_courses(studentid):
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
-    response, request_id = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/finance/studentid/' + studentid + '/courses')
+    response, request_id = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/finance/studentid/' + studentid + '/courses', e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 ### put the k12 microservice request into corresponding sqs
 @app.route('/public/k12', methods = ['GET'])
 def get_k12_info():
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
-    response, request_id = send_to_request_queue(queue_k12_name, 'GET', url, 'None', '/private/k12')
+    response, request_id = send_to_request_queue(queue_k12_name, 'GET', url, 'None', '/private/k12', e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 @app.route('/public/k12/studentid/<studentid>', methods = ['GET'])
 def get_k12_info_by_studentid(studentid):
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
-    response, request_id = send_to_request_queue(queue_k12_name, 'GET', url, 'None', '/private/k12/studentid/' + studentid)
+    response, request_id = send_to_request_queue(queue_k12_name, 'GET', url, 'None', '/private/k12/studentid/' + studentid, e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 @app.route('/public/k12/studentid/<studentid>/schoolid/<schoolid>', methods=['GET'])
 def get_k12_info_by_studentid_schoolid(studentid, schoolid):
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
-    response, request_id = send_to_request_queue(queue_k12_name, 'GET', url, 'None', '/private/k12/studentid/' + studentid + '/schoolid/' + schoolid)
+    response, request_id = send_to_request_queue(queue_k12_name, 'GET', url, 'None', '/private/k12/studentid/' + studentid + '/schoolid/' + schoolid, e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 @app.route('/public/k12', methods = ['POST'])
 def post_k12_info():
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
     content = request.get_json(force = True)
     str_json = json.dumps(content)
-    response, request_id = send_to_request_queue(queue_k12_name, 'POST', url, str_json, '/private/k12')
+    response, request_id = send_to_request_queue(queue_k12_name, 'POST', url, str_json, '/private/k12', e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 @app.route('/public/k12/studentid/<studentid>/schoolid/<schoolid>', methods=['PUT'])
 def update_k12_info(studentid, schoolid):
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
     content = request.get_json(force = True)
     str_json = json.dumps(content)
-    response, request_id = send_to_request_queue(queue_k12_name, 'PUT', url, str_json, '/private/k12/studentid/' + studentid + '/schoolid/' + schoolid)
+    response, request_id = send_to_request_queue(queue_k12_name, 'PUT', url, str_json, '/private/k12/studentid/' + studentid + '/schoolid/' + schoolid, e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 @app.route('/public/k12', methods=['DELETE'])
 def delete_k12_info():
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
-    response, request_id = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/k12')
+    response, request_id = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/k12', e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 @app.route('/public/k12/studentid/<studentid>/schoolid/<schoolid>', methods=['DELETE'])
 def delete_k12_info_by_studentid_schoolid(studentid, schoolid):
     client_id = request.headers.get('client_id')
+    e_tag = request.headers.get('If-Match')
+    if e_tag == None:
+        e_tag = 'None'
     url = get_response_queue_url(client_id)
-    response, request_id = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/k12/studentid/' + studentid + '/schoolid/' + schoolid)
+    response, request_id = send_to_request_queue(queue_k12_name, 'DELETE', url, 'None', '/private/k12/studentid/' + studentid + '/schoolid/' + schoolid, e_tag)
     return Response('{"_status": "SUCCESS", "_success": {"message":' + json.dumps(response) + ', "request_id":"' + request_id + '", "code": 200}}', mimetype='application/json', status=200)
 
 @app.route('/', methods=['GET'])

@@ -227,7 +227,7 @@ def get_response():
         # 1. if it's in cache
         if request_id in this_cache:
             logging.info("read from cache")
-            return Response(this_cache[request_id], status=200)
+            return Response(this_cache[request_id], mimetype='application/json', status=200)
         
         # 2. else if it's in db
         mongo_res = mongo.project2.response_cache.find_one(
@@ -239,7 +239,7 @@ def get_response():
         if mongo_res and mongo_res.get("ReturnValue"):
             response_cache[client_id][request_id] = mongo_res["ReturnValue"]  # add it to cache
             logging.info("read from mongo")
-            return Response(mongo_res["ReturnValue"], status=200)
+            return Response(mongo_res["ReturnValue"], mimetype='application/json', status=200)
     
     # 3. else retrieve from sqs and put into cache and db
     sqs_response = sqs.receive_message(QueueUrl=queueUrl, MessageAttributeNames=["All"])
@@ -265,7 +265,7 @@ def get_response():
         # sqs.delete_message(QueueUrl=queueUrl, ReceiptHandle=receiptHandle)
         logging.info("read request_id %s from sqs"%this_request_id)
         if not request_id or request_id==this_request_id:  # if match or does not provide request_id, return
-            return Response(ReturnValue, status=200)
+            return Response(ReturnValue, mimetype='application/json', status=200)
         else:  # else keep polling
             sqs_response = sqs.receive_message(QueueUrl=queueUrl, MessageAttributeNames=["All"])
             message = sqs_response.get("Messages", list())

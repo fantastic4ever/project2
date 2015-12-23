@@ -172,6 +172,7 @@ def finance_update_student(student_id):
 		headers = request.headers
 		response = requests.put(eve_base_url + '/' + oid, data = json.dumps(data), headers = headers)
 		# return Response(response.content, mimetype='application/json', status=response.status_code)
+		print "nani"
 		return send_to_response_queue(request.headers.get('Response-url'), request.headers.get('Request-id'), response.content)
 	except Exception as e:
 		if type(e).__name__ == 'ConnectionError':

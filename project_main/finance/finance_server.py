@@ -21,14 +21,16 @@ def pull_message():
                 print(message['MessageAttributes'])
                 message_attr = message['MessageAttributes']
                 header = {'Content-type': 'application/json', 
-                'Response-url':message_attr['response_queue_url']['StringValue'],
-                'Request-id':message_attr['request_id']['StringValue']}
+                    'Response-url':message_attr['response_queue_url']['StringValue'],
+                    'Request-id':message_attr['request_id']['StringValue'],
+                    'If-Match': message_attr['e_tag']['StringValue']}
                 conn.request(method=message_attr['op']['StringValue'], 
                     url=message_attr['service_url']['StringValue'],
                     body=message_attr['body']['StringValue'],
                     headers=header)
                 response = conn.getresponse()
                 print response.read()
+                print '\n'
                 sqs_client.delete_message(QueueUrl=request_queue_url,
                     ReceiptHandle=message['ReceiptHandle'])
 

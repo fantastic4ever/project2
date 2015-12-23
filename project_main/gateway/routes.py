@@ -35,7 +35,7 @@ def delete_request_queues():
 def create_response_queue(client_id):
     queue = sqs.create_queue(QueueName = client_id)
     try:
-        sqs.add_permission(QueueUrl = queue['QueueUrl'], Label = 'AllOp', AWSAccountIds = ['559115960312'], Actions = ['*'])
+        sqs.add_permission(QueueUrl = queue['QueueUrl'], Label = 'AllOp', AWSAccountIds = ['559115960312', '308367428478'], Actions = ['*'])
     except Error as e:
         print e
     response_queues.insert_one({'client_id': client_id, 'url': queue['QueueUrl']})
